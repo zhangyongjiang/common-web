@@ -19,8 +19,8 @@ import common.util.reflection.FieldFoundCallback;
 import common.util.reflection.ReflectionUtil;
 
 public class ORMClass<T> {
-    private static boolean ignoreSupported;
-    private static boolean replaceSupported;
+    private boolean ignoreSupported;
+    private boolean replaceSupported;
     
     private Class<T> cls;
     private Map<String, Field> fields;
@@ -28,11 +28,7 @@ public class ORMClass<T> {
     private String columns;
     private String namedColumns;
     private String tableName;
-    
-    public ORMClass() {
-    	ignoreSupported = true;
-    	replaceSupported = true;
-	}
+    private Field idField;
     
     public RowMapper<T> getStreamRow(RowMapped<T> mapped) {
     	return new BaseRowMapper(mapped);
@@ -99,7 +95,6 @@ public class ORMClass<T> {
     }
     
     public ORMClass(Class<T> cls) {
-    	this();
         this.cls = cls;
 
         fields = new HashMap<String, Field>();
@@ -111,6 +106,9 @@ public class ORMClass<T> {
                     field.setAccessible(true);
                     fields.put(field.getName(), field);
                     upper.put(field.getName().toUpperCase(), field);
+                    if("id".equalsIgnoreCase(field.getName())) {
+                    	idField = field;
+                    }
                 }
             });
         }
@@ -447,23 +445,39 @@ public class ORMClass<T> {
         return insertOrReplace(jc, sql, obj);
     }
 
-	public static boolean isIgnoreSupported() {
+	public boolean isIgnoreSupported() {
 		return ignoreSupported;
 	}
 
-	public static void setIgnoreSupported(boolean supported) {
+	public void setIgnoreSupported(boolean supported) {
 		ignoreSupported = supported;
 	}
 
-	public static boolean isReplaceSupported() {
+	public boolean isReplaceSupported() {
 		return replaceSupported;
 	}
 
-	public static void setReplaceSupported(boolean supported) {
+	public void setReplaceSupported(boolean supported) {
 		replaceSupported = supported;
 	}
 	
 	public Class getMappedClass() {
 		return cls;
+	}
+	
+	public String getObjectId(Object obj) {
+		try {
+			return (String) idField.get(obj);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public Field getIdField() {
+		return idField;
+	}
+
+	public void setIdField(Field idField) {
+		this.idField = idField;
 	}
 }

@@ -12,7 +12,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import common.db.util.ORMClass;
 import common.db.util.RowMapped;
 
-public interface ClusterDataDao<T extends HasId> {
+public interface ClusterDataDao<T> {
 	void createSchema();
 	int getShardSize();
 	void replace(T data);

@@ -23,7 +23,7 @@ import common.db.util.RowMapped;
 import common.util.MultiTask;
 import common.util.reflection.ReflectionUtil;
 
-public abstract class ClusterDataDaoImpl<T extends HasId> implements ClusterDataDao<T> {
+public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 	abstract public DbCluster getDbCluster();
 	abstract public ShardResolver getShardResolver();
 	
@@ -43,13 +43,13 @@ public abstract class ClusterDataDaoImpl<T extends HasId> implements ClusterData
 	
 	@Override
 	public void replace(T data) {
-		int shardId = getShardResolver().getShardId(data.getId());
+		int shardId = getShardResolver().getShardId(orm.getObjectId(data));
 		NamedParameterJdbcTemplate jc = getDbCluster().getNamedParameterJdbcTemplate(shardId);
-		if(ORMClass.isReplaceSupported()) {
+		if(orm.isReplaceSupported()) {
 			orm.replace(jc, data);
 		}
 		else {
-			T db = get(data.getId());
+			T db = get(orm.getObjectId(data));
 			if(db == null) {
 				orm.insert(jc, data, true);
 			}
