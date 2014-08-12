@@ -1,6 +1,5 @@
 package common.db.shard;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -69,14 +68,6 @@ public class DbCluster {
 				shards.put(shardId, shard);
 			}
 			return shard;
-		}
-	}
-	
-	public void close() throws SQLException {
-		synchronized (shards) {
-			for(DbShard shard : shards.values()) {
-			}
-			shards.clear();
 		}
 	}
 	
