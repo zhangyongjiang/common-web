@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -27,8 +27,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 	abstract public DbCluster getDbCluster();
 	abstract public ShardResolver getShardResolver();
 	
-	@Autowired protected SharedShardTaskExecutor taskExecutor;
-	@Autowired protected DataSourceManager dataSourceManager;
+	private ExecutorService executorService;
 	
 	protected ORMClass<T> orm;
 	
@@ -113,7 +112,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 			});
 			mt.addTask(shardTask);
 		}
-		mt.execute(taskExecutor.getExecutorService());
+		mt.execute(executorService);
 		
 		return result;
 	}
@@ -156,7 +155,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 			ShardTask shardTask = new ShardTask(shardId, runnable);
 			mt.addTask(shardTask);
 		}
-		mt.execute(taskExecutor.getExecutorService());
+		mt.execute(executorService);
 		
 		return result;
 	}
@@ -272,7 +271,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 			ShardTask shardTask = new ShardTask(shardId, runnable);
 			mt.addTask(shardTask);
 		}
-		mt.execute(taskExecutor.getExecutorService());
+		mt.execute(executorService);
 	}
 	
 	@Override
@@ -347,7 +346,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 			ShardTask shardTask = new ShardTask(i, runnable);
 			mt.addTask(shardTask);
 		}
-		mt.execute(taskExecutor.getExecutorService());
+		mt.execute(executorService);
 	}
 	
 	@Override
@@ -365,7 +364,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 			ShardTask shardTask = new ShardTask(i, runnable);
 			mt.addTask(shardTask);
 		}
-		mt.execute(taskExecutor.getExecutorService());
+		mt.execute(executorService);
 	}
 	
 	@Override
@@ -395,7 +394,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 			ShardTask shardTask = new ShardTask(i, runnable);
 			mt.addTask(shardTask);
 		}
-		mt.execute(taskExecutor.getExecutorService());
+		mt.execute(executorService);
 	}
 	
 	@Override
@@ -414,7 +413,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 			ShardTask shardTask = new ShardTask(shardId, runnable);
 			mt.addTask(shardTask);
 		}
-		mt.execute(taskExecutor.getExecutorService());
+		mt.execute(executorService);
 	}
 	
 	@Override
@@ -432,7 +431,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 			ShardTask shardTask = new ShardTask(i, runnable);
 			mt.addTask(shardTask);
 		}
-		mt.execute(taskExecutor.getExecutorService());
+		mt.execute(executorService);
 	}
 	
 	@Override
@@ -450,6 +449,10 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 			ShardTask shardTask = new ShardTask(i, runnable);
 			mt.addTask(shardTask);
 		}
-		mt.execute(taskExecutor.getExecutorService());
+		mt.execute(executorService);
+	}
+	
+	public void setExecutorService(ExecutorService executorService) {
+		this.executorService = executorService;
 	}
 }
