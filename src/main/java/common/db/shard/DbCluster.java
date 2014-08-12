@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.commons.dbcp2.BasicDataSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
@@ -43,8 +44,8 @@ public class DbCluster {
 		        url = url.replaceAll("__PHYSICAL__", String.valueOf((shardId / virtualShardPerPhysicalServer)));
 		        shardSetting.put("url", url);
 				
-				shard = new DbShard(dataSourceManager, shardId, shardSetting);
-				shard.open();
+		    	BasicDataSource dataSource = dataSourceManager.getDataSource(shardSetting);
+				shard = new DbShard(dataSource);
 				shards.put(shardId, shard);
 			}
 			return shard;
@@ -54,7 +55,6 @@ public class DbCluster {
 	public void close() throws SQLException {
 		synchronized (shards) {
 			for(DbShard shard : shards.values()) {
-				shard.close();
 			}
 			shards.clear();
 		}
