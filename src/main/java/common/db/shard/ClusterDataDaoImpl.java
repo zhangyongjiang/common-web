@@ -174,7 +174,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 	@Override
 	public void dump(final ObjectDumper od) {
 		String sql = "select * from " + orm.getTableName();
-		for(int i=0; i<getShardResolver().virtualSize(); i++) {
+		for(int i=0; i<getShardResolver().size(); i++) {
 			JdbcTemplate template = getDbCluster().getJdbcTemplate(i);
 			RowMapper<T> mapper2 = orm.getStreamRow(new RowMapped<T>() {
 				@Override
@@ -207,7 +207,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 	
 	@Override
 	public void dump(String sql, RowMapped<T> rows) {
-		for(int i=0; i<getShardResolver().virtualSize(); i++) {
+		for(int i=0; i<getShardResolver().size(); i++) {
 			JdbcTemplate template = getDbCluster().getJdbcTemplate(i);
 			template.query(sql, orm.getStreamRow(rows));
 		}
@@ -215,7 +215,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 	
 	@Override
 	public void dump(String sql, RowMapper<T> rows) {
-		for(int i=0; i<getShardResolver().virtualSize(); i++) {
+		for(int i=0; i<getShardResolver().size(); i++) {
 			JdbcTemplate template = getDbCluster().getJdbcTemplate(i);
 			template.query(sql, rows);
 		}
@@ -243,7 +243,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 	
 	@Override
 	public int getShardSize() {
-		return getShardResolver().virtualSize();
+		return getShardResolver().size();
 	}
 	
 	@Override
@@ -277,7 +277,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 	@Override
 	public void query(final OutputStream stream, String sql) {
 		final StringBuilder sb = new StringBuilder();
-		for(int i=0; i<getShardResolver().virtualSize(); i++) {
+		for(int i=0; i<getShardResolver().size(); i++) {
 			JdbcTemplate template = getDbCluster().getJdbcTemplate(i);
 			template.query(sql, new RowMapper(){
 				ResultSetMetaData metaData = null;
