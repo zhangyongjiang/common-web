@@ -24,7 +24,7 @@ import common.util.MultiTask;
 import common.util.reflection.ReflectionUtil;
 
 public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
-	abstract public DbCluster getDbCluster();
+	abstract public ShardedDataSource getShardedDataSource();
 	abstract public ShardResolver getShardResolver();
 	
 	private ExecutorService executorService;
@@ -43,7 +43,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 	@Override
 	public void replace(T data) {
 		int shardId = getShardResolver().getShardId(orm.getObjectId(data));
-		NamedParameterJdbcTemplate jc = getDbCluster().getNamedParameterJdbcTemplate(shardId);
+		NamedParameterJdbcTemplate jc = getShardedDataSource().getNamedParameterJdbcTemplate(shardId);
 		if(orm.isReplaceSupported()) {
 			orm.replace(jc, data);
 		}
@@ -78,7 +78,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 	@Override
 	public List<T> getAll(String id) {
 		int shardId = getShardResolver().getShardId(id);
-		NamedParameterJdbcTemplate jc = getDbCluster().getNamedParameterJdbcTemplate(shardId);
+		NamedParameterJdbcTemplate jc = getShardedDataSource().getNamedParameterJdbcTemplate(shardId);
 		return orm.query(jc, Collections.singletonMap("id", id), null);
 	}
 
@@ -103,7 +103,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 				@Override
 				public void run(int shardId) {
 					List<String> sameShardIds = shardedIds.get(shardId);
-					NamedParameterJdbcTemplate namedjc = getDbCluster().getNamedParameterJdbcTemplate(shardId);
+					NamedParameterJdbcTemplate namedjc = getShardedDataSource().getNamedParameterJdbcTemplate(shardId);
 					List<T> data = orm.queryBySql(namedjc, "select * from " + orm.getTableName() + " where id in (:ids)", Collections.singletonMap("ids", sameShardIds));
 					synchronized (result) {
 						result.addAll(data);
@@ -140,7 +140,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 			@Override
 			public void run(int shardId) {
 				List<String> sameShardIds = shardedIds.get(shardId);
-				NamedParameterJdbcTemplate namedjc = getDbCluster().getNamedParameterJdbcTemplate(shardId);
+				NamedParameterJdbcTemplate namedjc = getShardedDataSource().getNamedParameterJdbcTemplate(shardId);
 				String sql = "select id from " + orm.getTableName() + " where id in (:ids)";
 				List<String> data = namedjc.queryForList(sql, Collections.singletonMap("ids", sameShardIds), String.class);
 				synchronized (result) {
@@ -175,7 +175,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 	public void dump(final ObjectDumper od) {
 		String sql = "select * from " + orm.getTableName();
 		for(int i=0; i<getShardResolver().size(); i++) {
-			JdbcTemplate template = getDbCluster().getJdbcTemplate(i);
+			JdbcTemplate template = getShardedDataSource().getJdbcTemplate(i);
 			RowMapper<T> mapper2 = orm.getStreamRow(new RowMapped<T>() {
 				@Override
 				public void objectFound(T obj) {
@@ -189,7 +189,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 	@Override
 	public void dump(final ObjectDumper od, int shardId) {
 		String sql = "select * from " + orm.getTableName();
-		JdbcTemplate template = getDbCluster().getJdbcTemplate(shardId);
+		JdbcTemplate template = getShardedDataSource().getJdbcTemplate(shardId);
 		RowMapper<T> streamRow = orm.getStreamRow(new RowMapped<T>() {
 			@Override
 			public void objectFound(T obj) {
@@ -208,7 +208,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 	@Override
 	public void dump(String sql, RowMapped<T> rows) {
 		for(int i=0; i<getShardResolver().size(); i++) {
-			JdbcTemplate template = getDbCluster().getJdbcTemplate(i);
+			JdbcTemplate template = getShardedDataSource().getJdbcTemplate(i);
 			template.query(sql, orm.getStreamRow(rows));
 		}
 	}
@@ -216,29 +216,29 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 	@Override
 	public void dump(String sql, RowMapper<T> rows) {
 		for(int i=0; i<getShardResolver().size(); i++) {
-			JdbcTemplate template = getDbCluster().getJdbcTemplate(i);
+			JdbcTemplate template = getShardedDataSource().getJdbcTemplate(i);
 			template.query(sql, rows);
 		}
 	}
 	
 	@Override
 	public JdbcTemplate getJdbcTemplate(int shardId) {
-		return getDbCluster().getJdbcTemplate(shardId);
+		return getShardedDataSource().getJdbcTemplate(shardId);
 	}
 	
 	@Override
 	public NamedParameterJdbcTemplate getNamedJdbcTemplate(int shardId) {
-		return getDbCluster().getNamedParameterJdbcTemplate(shardId);
+		return getShardedDataSource().getNamedParameterJdbcTemplate(shardId);
 	}
 	
 	@Override
 	public JdbcTemplate getJdbcTemplateForId(String id) {
-		return getDbCluster().getJdbcTemplate(getShardResolver().getShardId(id));
+		return getShardedDataSource().getJdbcTemplate(getShardResolver().getShardId(id));
 	}
 	
 	@Override
 	public NamedParameterJdbcTemplate getNamedJdbcTemplateForId(String id) {
-		return getDbCluster().getNamedParameterJdbcTemplate(getShardResolver().getShardId(id));
+		return getShardedDataSource().getNamedParameterJdbcTemplate(getShardResolver().getShardId(id));
 	}
 	
 	@Override
@@ -259,7 +259,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 			@Override
 			public void run(int shardId) {
 				List<String> sameShardIds = shardedIds.get(shardId);
-				NamedParameterJdbcTemplate namedjc = getDbCluster().getNamedParameterJdbcTemplate(shardId);
+				NamedParameterJdbcTemplate namedjc = getShardedDataSource().getNamedParameterJdbcTemplate(shardId);
 				String sql = "delete from " + orm.getTableName() + " where id in (:ids)";
 				namedjc.update(sql, Collections.singletonMap("ids", sameShardIds));
 			}
@@ -278,7 +278,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 	public void query(final OutputStream stream, String sql) {
 		final StringBuilder sb = new StringBuilder();
 		for(int i=0; i<getShardResolver().size(); i++) {
-			JdbcTemplate template = getDbCluster().getJdbcTemplate(i);
+			JdbcTemplate template = getShardedDataSource().getJdbcTemplate(i);
 			template.query(sql, new RowMapper(){
 				ResultSetMetaData metaData = null;
 				@Override
@@ -337,7 +337,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 		ShardRunnable runnable = new ShardRunnable() {
 			@Override
 			public void run(int shardId) {
-				JdbcTemplate namedjc = getDbCluster().getJdbcTemplate(shardId);
+				JdbcTemplate namedjc = getShardedDataSource().getJdbcTemplate(shardId);
 				namedjc.query(sql, args, rows);
 			}
 		};
@@ -355,7 +355,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 		ShardRunnable runnable = new ShardRunnable() {
 			@Override
 			public void run(int shardId) {
-				NamedParameterJdbcTemplate namedjc = getDbCluster().getNamedParameterJdbcTemplate(shardId);
+				NamedParameterJdbcTemplate namedjc = getShardedDataSource().getNamedParameterJdbcTemplate(shardId);
 				namedjc.query(sql, params, rows);
 			}
 		};
@@ -385,7 +385,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 		ShardRunnable runnable = new ShardRunnable() {
 			@Override
 			public void run(int shardId) {
-				JdbcTemplate namedjc = getDbCluster().getJdbcTemplate(shardId);
+				JdbcTemplate namedjc = getShardedDataSource().getJdbcTemplate(shardId);
 				namedjc.update(sql, args);
 			}
 		};
@@ -403,7 +403,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 		ShardRunnable runnable = new ShardRunnable() {
 			@Override
 			public void run(int shardId) {
-				JdbcTemplate namedjc = getDbCluster().getJdbcTemplate(shardId);
+				JdbcTemplate namedjc = getShardedDataSource().getJdbcTemplate(shardId);
 				namedjc.update(sql, args.get(shardId));
 			}
 		};
@@ -422,7 +422,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 		ShardRunnable runnable = new ShardRunnable() {
 			@Override
 			public void run(int shardId) {
-				JdbcTemplate namedjc = getDbCluster().getJdbcTemplate(shardId);
+				JdbcTemplate namedjc = getShardedDataSource().getJdbcTemplate(shardId);
 				namedjc.update(sql, args.get(shardId));
 			}
 		};
@@ -440,7 +440,7 @@ public abstract class ClusterDataDaoImpl<T> implements ClusterDataDao<T> {
 		ShardRunnable runnable = new ShardRunnable() {
 			@Override
 			public void run(int shardId) {
-				NamedParameterJdbcTemplate namedjc = getDbCluster().getNamedParameterJdbcTemplate(shardId);
+				NamedParameterJdbcTemplate namedjc = getShardedDataSource().getNamedParameterJdbcTemplate(shardId);
 				namedjc.update(sql, params);
 			}
 		};
