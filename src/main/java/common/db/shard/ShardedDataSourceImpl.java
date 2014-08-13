@@ -14,6 +14,11 @@ public class ShardedDataSourceImpl implements ShardedDataSource {
 	private List<DataSource> dataSources;
 
 	@Override
+	public int getTotalShards() {
+		return dataSources.size();
+	}
+
+	@Override
 	public DataSource getDataSource(int shard) {
 		return dataSources.get(shard);
 	}
